@@ -1,179 +1,290 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Toolbar,
+} from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import IMaskInputWrapper from '../components/IMaskInputWrapper';
+import {
+  createFuncionario,
+  updateFuncionario,
+  getFuncionarioById,
+} from '../services/funcionarioService';
 
 const FuncionarioForm = () => {
-  const [nome, setNome] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [matricula, setMatricula] = useState('');
-  const [senha, setSenha] = useState('');
-  const [grupo, setGrupo] = useState('');
+  const { id, opr } = useParams();
+  const navigate = useNavigate();
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm();
 
-  const formatCPF = (value) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-      .slice(0, 14);
-  };
+  const isReadOnly = opr === 'view';
 
-  const formatPhone = (value) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/^(\d{2})(\d)/g, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 15);
-  };
+  let title;
+  if (opr === 'view') {
+    title = `Visualizar Funcionário: ${id}`;
+  } else if (id) {
+    title = `Editar Funcionário: ${id}`;
+  } else {
+    title = 'Novo Funcionário';
+  }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Dados do funcionário:', {
-      nome,
-      cpf,
-      telefone,
-      matricula,
-      senha,
-      grupo
-    });
+  useEffect(() => {
+    if (id) {
+      const fetchFuncionario = async () => {
+        try {
+          const data = await getFuncionarioById(id);
+          reset(data);
+        } catch (error) {
+          toast.error('Erro ao buscar dados do funcionário.', {
+            position: 'top-center',
+          });
+        }
+      };
+      fetchFuncionario();
+    }
+  }, [id, reset]);
+
+  const onSubmit = async (data) => {
+    try {
+      let retorno;
+      if (id) {
+        retorno = await updateFuncionario(id, data);
+      } else {
+        retorno = await createFuncionario(data);
+      }
+
+      if (!retorno || !retorno.id) {
+        throw new Error(retorno.erro || 'Erro ao salvar funcionário.');
+      }
+
+      toast.success(`Funcionário salvo com sucesso. ID: ${retorno.id}`, {
+        position: 'top-center',
+      });
+      navigate('/funcionarios');
+    } catch (error) {
+      toast.error(`Erro ao salvar funcionário: \n${error.message}`, {
+        position: 'top-center',
+      });
+    }
   };
 
   return (
-    <div style={styles.page}>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <h2 style={styles.title}>Cadastro de Funcionário</h2>
+    <Box
+      component="form"
+      onSubmit={handleSubmit(onSubmit)}
+      sx={{
+        backgroundColor: '#e3f2fd',
+        padding: 2,
+        borderRadius: 1,
+        mt: 2,
+        minHeight: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Box
+        sx={{
+          backgroundColor: '#fff',
+          padding: 4,
+          borderRadius: 3,
+          maxWidth: 600,
+          width: '100%',
+          boxShadow: 3,
+        }}
+      >
+        <Toolbar
+          sx={{
+            backgroundColor: '#1976d2',
+            padding: 1,
+            borderRadius: 2,
+            mb: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Typography variant="h6" color="white">
+            {title}
+          </Typography>
+        </Toolbar>
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Nome</label>
-          <input
-            type="text"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Digite o nome completo"
-            style={styles.input}
-          />
-        </div>
+        {isReadOnly && (
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Todos os campos estão em modo somente leitura.
+          </Typography>
+        )}
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>CPF</label>
-          <input
-            type="text"
-            value={cpf}
-            onChange={(e) => setCpf(formatCPF(e.target.value))}
-            placeholder="000.000.000-00"
-            maxLength={14}
-            style={styles.input}
-          />
-        </div>
+        <Controller
+          name="nome"
+          control={control}
+          defaultValue=""
+          rules={{ required: 'Nome é obrigatório' }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              disabled={isReadOnly}
+              label="Nome"
+              fullWidth
+              margin="normal"
+              error={!!errors.nome}
+              helperText={errors.nome?.message}
+            />
+          )}
+        />
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Telefone</label>
-          <input
-            type="text"
-            value={telefone}
-            onChange={(e) => setTelefone(formatPhone(e.target.value))}
-            placeholder="(00) 00000-0000"
-            maxLength={15}
-            style={styles.input}
-          />
-        </div>
+        <Controller
+          name="cpf"
+          control={control}
+          defaultValue=""
+          rules={{ required: 'CPF é obrigatório' }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              disabled={isReadOnly}
+              label="CPF"
+              fullWidth
+              margin="normal"
+              error={!!errors.cpf}
+              helperText={errors.cpf?.message}
+              InputProps={{
+                inputComponent: IMaskInputWrapper,
+                inputProps: {
+                  mask: '000.000.000-00',
+                  definitions: {
+                    '0': /\d/,
+                  },
+                  unmask: true,
+                },
+              }}
+            />
+          )}
+        />
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Matrícula</label>
-          <input
-            type="text"
-            value={matricula}
-            onChange={(e) => setMatricula(e.target.value)}
-            placeholder="Número de matrícula"
-            style={styles.input}
-          />
-        </div>
+        <Controller
+          name="telefone"
+          control={control}
+          defaultValue=""
+          rules={{ required: 'Telefone é obrigatório' }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              disabled={isReadOnly}
+              label="Telefone"
+              fullWidth
+              margin="normal"
+              error={!!errors.telefone}
+              helperText={errors.telefone?.message}
+              InputProps={{
+                inputComponent: IMaskInputWrapper,
+                inputProps: {
+                  mask: '(00) 00000-0000',
+                  definitions: {
+                    '0': /\d/,
+                  },
+                  unmask: true,
+                },
+              }}
+            />
+          )}
+        />
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Senha</label>
-          <input
-            type="password"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            placeholder="Senha de acesso"
-            style={styles.input}
-          />
-        </div>
+        <Controller
+          name="matricula"
+          control={control}
+          defaultValue=""
+          rules={{ required: 'Matrícula é obrigatória' }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              disabled={isReadOnly}
+              label="Matrícula"
+              fullWidth
+              margin="normal"
+              error={!!errors.matricula}
+              helperText={errors.matricula?.message}
+            />
+          )}
+        />
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Grupo</label>
-          <select
-            value={grupo}
-            onChange={(e) => setGrupo(e.target.value)}
-            style={styles.input}
+        <Controller
+          name="senha"
+          control={control}
+          defaultValue=""
+          rules={{
+            required: 'Senha obrigatória',
+            minLength: { value: 6, message: 'Pelo menos 6 caracteres' },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              disabled={isReadOnly}
+              label="Senha"
+              type="password"
+              fullWidth
+              margin="normal"
+              error={!!errors.senha}
+              helperText={errors.senha?.message}
+            />
+          )}
+        />
+
+        <Controller
+          name="grupo"
+          control={control}
+          defaultValue=""
+          rules={{ required: 'Grupo é obrigatório' }}
+          render={({ field }) => (
+            <FormControl fullWidth margin="normal" error={!!errors.grupo}>
+              <InputLabel id="grupo-label">Grupo</InputLabel>
+              <Select
+                {...field}
+                disabled={isReadOnly}
+                labelId="grupo-label"
+                label="Grupo"
+              >
+                <MenuItem value="admin">Admin</MenuItem>
+                <MenuItem value="gerente">Gerente</MenuItem>
+                <MenuItem value="funcionario">Funcionário</MenuItem>
+              </Select>
+              {errors.grupo && (
+                <Typography variant="caption" color="error">
+                  {errors.grupo.message}
+                </Typography>
+              )}
+            </FormControl>
+          )}
+        />
+
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+          <Button
+            onClick={() => navigate('/funcionarios')}
+            sx={{ mr: 1 }}
+            variant="outlined"
           >
-            <option value="">Selecione</option>
-            <option value="admin">Admin</option>
-            <option value="gerente">Gerente</option>
-            <option value="funcionario">Funcionário</option>
-          </select>
-        </div>
-
-        <button type="submit" style={styles.button}>Cadastrar</button>
-      </form>
-    </div>
+            Cancelar
+          </Button>
+          {!isReadOnly && (
+            <Button type="submit" variant="contained" color="primary">
+              {id ? 'Atualizar' : 'Cadastrar'}
+            </Button>
+          )}
+        </Box>
+      </Box>
+    </Box>
   );
-};
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#e3f2fd',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '20px'
-  },
-  form: {
-    backgroundColor: '#fff',
-    padding: '30px 25px',
-    borderRadius: '12px',
-    maxWidth: '450px',
-    width: '100%',
-    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '18px'
-  },
-  title: {
-    fontSize: '1.5rem',
-    textAlign: 'center',
-    color: '#1976d2',
-    marginBottom: '10px'
-  },
-  fieldGroup: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  label: {
-    marginBottom: '4px',
-    fontSize: '0.95rem',
-    fontWeight: 600,
-    color: '#444'
-  },
-  input: {
-    padding: '10px 12px',
-    fontSize: '1rem',
-    borderRadius: '6px',
-    border: '1px solid #ccc',
-    transition: 'border 0.2s ease-in-out',
-    outline: 'none'
-  },
-  button: {
-    padding: '12px',
-    fontSize: '1rem',
-    backgroundColor: '#1976d2',
-    color: 'white',
-    fontWeight: 600,
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s'
-  }
 };
 
 export default FuncionarioForm;
