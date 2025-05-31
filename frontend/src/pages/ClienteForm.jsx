@@ -1,163 +1,227 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import {
+    TextField,
+    Button,
+    Box,
+    Typography,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    Select,
+    Toolbar
+} from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import IMaskInputWrapper from '../components/IMaskInputWrapper';
+import {
+    createCliente,
+    updateCliente,
+    getClienteById,
+    verificarCpfExistente
+} from '../services/clienteService';
+import './ClienteForm.css';
 
 const ClienteForm = () => {
-  const [nome, setNome] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [email, setEmail] = useState('');
-  const [endereco, setEndereco] = useState('');
+    const { id, opr } = useParams();
+    const navigate = useNavigate();
+    const isReadOnly = opr === 'view';
 
-  const formatCPF = (value) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-      .slice(0, 14);
-  };
+    const title = opr === 'view'
+        ? `Visualizar Cliente: ${id}`
+        : id ? `Editar Cliente: ${id}` : 'Novo Cliente';
 
-  const formatPhone = (value) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/^(\d{2})(\d)/g, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .slice(0, 15);
-  };
+    const { register, control, handleSubmit, reset, formState: { errors } } = useForm();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log({
-      nome,
-      cpf,
-      telefone,
-      email,
-      endereco
-    });
-  };
+    useEffect(() => {
+        if (id) {
+            const fetchClientes = async () => {
+                const data = await getClientesById(id);
+                reset(data);
+            };
+            fetchClientes();
+        }
+    }, [id, reset]);
 
-  return (
-    <div style={styles.page}>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <h2 style={styles.title}>Cadastro de Cliente</h2>
+    const onSubmit = async (data) => {
+        try {
+            let retorno;
+            // Remove máscara do telefone
+            data.telefone = data.telefone.replace(/\D/g, '')
+            console.log("Telefone enviado:", data.telefone);
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Nome</label>
-          <input
-            type="text"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Nome completo"
-            style={styles.input}
-          />
-        </div>
+            if (id) {
+                retorno = await updateCliente(id, data);
+            } else {
+                retorno = await createCliente(data);
+            }
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>CPF</label>
-          <input
-            type="text"
-            value={cpf}
-            onChange={(e) => setCpf(formatCPF(e.target.value))}
-            placeholder="000.000.000-00"
-            maxLength={14}
-            style={styles.input}
-          />
-        </div>
+            if (!retorno || !retorno.id) {
+                throw new Error(retorno.erro || "Erro ao salvar cliente.");
+            }
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Telefone</label>
-          <input
-            type="text"
-            value={telefone}
-            onChange={(e) => setTelefone(formatPhone(e.target.value))}
-            placeholder="(00) 00000-0000"
-            maxLength={15}
-            style={styles.input}
-          />
-        </div>
+            toast.success(`Cliente salvo com sucesso. ID: ${retorno.id}`, { position: "top-center" });
+            navigate('/clientes');
+        } catch (error) {
+            toast.error(`Erro ao salvar cliente: \n${error.message}`, { position: "top-center" });
+        }
+    };
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>E-mail</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="email@exemplo.com"
-            style={styles.input}
-          />
-        </div>
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Endereço (opcional)</label>
-          <input
-            type="text"
-            value={endereco}
-            onChange={(e) => setEndereco(e.target.value)}
-            placeholder="Rua, nº, bairro..."
-            style={styles.input}
-          />
-        </div>
+    const verificarDuplicidadeCpf = async (cpfDigitado) => {
+        try {
+            const resultadoArray = await verificarCpfExistente(cpfDigitado);
+            const resultado = resultadoArray?.[0];
 
-        <button type="submit" style={styles.button}>Salvar</button>
-      </form>
-    </div>
-  );
-};
+            if (resultado?.id_cliente && resultado.id_cliente.toString() !== id?.toString()) {
+                toast.warning('Este CPF já está cadastrado para outro cliente.', {
+                    position: 'top-center',
+                    autoClose: 5000
+                });
+                reset((prev) => ({ ...prev, cpf: '' }));
+            }
+        } catch (error) {
+            console.error('Erro ao verificar CPF:', error);
+            toast.error('Erro ao verificar CPF. Tente novamente.', { position: 'top-center' });
+        }
+    };
 
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#e3f2fd',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '20px'
-  },
-  form: {
-    backgroundColor: '#fff',
-    padding: '30px 25px',
-    borderRadius: '12px',
-    maxWidth: '450px',
-    width: '100%',
-    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '18px'
-  },
-  title: {
-    fontSize: '1.5rem',
-    textAlign: 'center',
-    color: '#1976d2',
-    marginBottom: '10px'
-  },
-  fieldGroup: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  label: {
-    marginBottom: '4px',
-    fontSize: '0.95rem',
-    fontWeight: 600,
-    color: '#444'
-  },
-  input: {
-    padding: '10px 12px',
-    fontSize: '1rem',
-    borderRadius: '6px',
-    border: '1px solid #ccc',
-    transition: 'border 0.2s ease-in-out',
-    outline: 'none'
-  },
-  button: {
-    padding: '12px',
-    fontSize: '1rem',
-    backgroundColor: '#1976d2',
-    color: 'white',
-    fontWeight: 600,
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s'
-  }
+    return (
+        <Box component="form" onSubmit={handleSubmit(onSubmit)} className="form-container">
+            <Box className="card">
+                <Toolbar sx={{
+                    backgroundColor: "transparent",
+                    padding: 1,
+                    borderRadius: 2,
+                    mb: 2,
+                    display: "flex",
+                    justifyContent: "space-between",
+                }}>
+                    <Typography variant="h6" className="title">
+                        {title}
+                    </Typography>
+                </Toolbar>
+
+                {opr === 'view' && (
+                    <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                        Todos os campos estão em modo somente leitura.
+                    </Typography>
+                )}
+
+                {/* Nome */}
+                <TextField
+                    label="Nome"
+                    fullWidth
+                    margin="normal"
+                    className="textfield"
+                    inputProps={{ maxLength: 100 }}
+                    {...register('nome', {
+                        required: 'Nome é obrigatório',
+                        maxLength: { value: 100, message: 'Máximo 100 caracteres' }
+                    })}
+                    error={!!errors.nome}
+                    helperText={errors.nome?.message}
+                    disabled={isReadOnly}
+                />
+
+                {/* CPF */}
+                <Controller
+                    name="cpf"
+                    control={control}
+                    defaultValue=""
+                    rules={{
+                        required: 'CPF é obrigatório',
+                        minLength: {
+                            value: 11,
+                            message: 'CPF deve conter 11 dígitos',
+                        },
+                        maxLength: {
+                            value: 11,
+                            message: 'CPF deve conter 11 dígitos',
+                        },
+                    }}
+                    render={({ field }) => (
+                        <TextField
+                            {...field}
+                            label="CPF"
+                            fullWidth
+                            margin="normal"
+                            className="textfield"
+                            error={!!errors.cpf}
+                            helperText={errors.cpf?.message}
+                            disabled={isReadOnly}
+                            onBlur={async (e) => {
+                                field.onBlur();
+                                if (!isReadOnly && e.target.value) {
+                                    const cpfSemMascara = e.target.value.replace(/\D/g, '');
+                                    await verificarDuplicidadeCpf(cpfSemMascara);
+                                }
+                            }}
+                            InputProps={{
+                                inputComponent: IMaskInputWrapper,
+                                inputProps: {
+                                    mask: "000.000.000-00",
+                                    definitions: { "0": /\d/ },
+                                    unmask: true,
+                                },
+                            }}
+                        />
+                    )}
+                />
+
+                {/* Telefone */}
+                <Controller
+                    name="telefone"
+                    control={control}
+                    defaultValue=""
+                    rules={{
+                        required: 'Telefone é obrigatório',
+                        validate: (value) => {
+                            const digits = value.replace(/\D/g, '');
+                            if (digits.length < 10 || digits.length > 11) {
+                                return 'Telefone deve ter entre 10 e 11 dígitos';
+                            }
+                            return true;
+                        },
+                    }}
+                    render={({ field }) => (
+                        <TextField
+                            {...field}
+                            label="Telefone"
+                            fullWidth
+                            margin="normal"
+                            className="textfield"
+                            disabled={isReadOnly}
+                            error={!!errors.telefone}
+                            helperText={errors.telefone?.message}
+                            InputProps={{
+                                inputComponent: IMaskInputWrapper,
+                                inputProps: {
+                                    mask: ['(00) 0000-0000', '(00) 00000-0000'],
+                                    dispatch: function (appended, dynamicMasked) {
+                                        const number = (dynamicMasked.value + appended).replace(/\D/g, '');
+                                        return dynamicMasked.compiledMasks[number.length > 10 ? 1 : 0];
+                                    }
+                                }
+                            }}
+                        />
+                    )}
+                />
+
+                {/* Botões */}
+                <Box className="buttons-container">
+                    <Button className="cancel-button" onClick={() => navigate('/clientes')}>
+                        Cancelar
+                    </Button>
+                    {opr !== 'view' && (
+                        <Button type="submit" variant="contained">
+                            {id ? "Atualizar" : "Cadastrar"}
+                        </Button>
+                    )}
+                </Box>
+            </Box>
+        </Box>
+    );
 };
 
 export default ClienteForm;

@@ -1,68 +1,57 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Box, Typography, Paper } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import './LoginForm.css';
+import { toast } from "react-toastify";
 
 const LoginForm = () => {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const navigate = useNavigate();
+    const { login } = useAuth();
 
-    const onSubmit = (data) => {
-        if (data.usuario === 'abc' && data.senha === 'bolinhas') {
-            localStorage.setItem('loginRealizado', data.usuario);
-            navigate('/home');
+    const onSubmit = async (data) => {
+        const sucesso = await login(data.usuario, data.senha);
+        if (sucesso) {
+            // Exibe notificação de sucesso
+            toast.success("Login realizado com sucesso!");
+            navigate("/home");
         } else {
-            alert("Usuário ou senha inválidos!");
+            // Exibe notificação de erro
+            toast.error("Usuário ou senha inválidos!");
         }
     };
 
     return (
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minHeight: '100vh',
-                backgroundColor: '#212121', // fundo escuro igual aos outros
-            }}
-        >
-            <Paper elevation={3} sx={{ padding: 4, width: 300 }}>
-                <Typography variant="h6" align="center" gutterBottom>
-                    Login
-                </Typography>
+        <div className="login-container">
+            <form onSubmit={handleSubmit(onSubmit)} className="login-form">
+                <h2 className="login-title">Login</h2>
 
-                <form onSubmit={handleSubmit(onSubmit)}>
-                    <TextField
-                        label="Usuário"
-                        fullWidth
-                        margin="normal"
-                        {...register('usuario', { required: 'Usuário é obrigatório' })}
-                        error={!!errors.usuario}
-                        helperText={errors.usuario?.message}
+                <div className="form-group">
+                    <label className="label">Usuário</label>
+                    <input
+                        {...register("usuario", { required: "Usuário é obrigatório" })}
+                        className="input"
                     />
+                    {errors.usuario && <p className="error">{errors.usuario.message}</p>}
+                </div>
 
-                    <TextField
-                        label="Senha"
+                <div className="form-group">
+                    <label className="label">Senha</label>
+                    <input
                         type="password"
-                        fullWidth
-                        margin="normal"
-                        {...register('senha', {
-                            required: 'Senha é obrigatória',
-                            minLength: {
-                                value: 6,
-                                message: 'Senha deve ter pelo menos 6 caracteres',
-                            },
+                        {...register("senha", {
+                            required: "Senha é obrigatória",
+                            minLength: { value: 6, message: "Senha deve ter pelo menos 6 caracteres" },
                         })}
-                        error={!!errors.senha}
-                        helperText={errors.senha?.message}
+                        className="input"
                     />
+                    {errors.senha && <p className="error">{errors.senha.message}</p>}
+                </div>
 
-                    <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                        Entrar
-                    </Button>
-                </form>
-            </Paper>
-        </Box>
+                <button type="submit" className="submit-btn">Entrar</button>
+            </form>
+        </div>
     );
 };
 

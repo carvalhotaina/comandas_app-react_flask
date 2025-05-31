@@ -1,0 +1,62 @@
+.form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 128px); 
+    background-color: #720d0d; 
+    padding: 32px;
+}
+
+.card {
+    background-color: rgba(255, 255, 255, 0.05); 
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 600px;
+}
+
+.title {
+    color: #f3eaea; 
+    font-weight: bold;
+}
+
+.textfield label,
+.select-group label {
+    color: #ffe0e0 !important;
+}
+
+.textfield input,
+.select-group .MuiSelect-select {
+    color: #e1cbcb; 
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 24px;
+}
+
+.cancel-button {
+    background-color: transparent;
+    color: #94a3b8; 
+    border: 1px solid #94a3b8;
+    border-radius: 8px;
+    padding: 8px 16px;
+    text-transform: none;
+}
+
+.cancel-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.MuiButton-contained {
+    background-color: #4c2525 !important;
+    color: white;
+    text-transform: none;
+    border-radius: 8px;
+}
+
+.MuiButton-contained:hover {
+    background-color: #c01515 !important;
+}

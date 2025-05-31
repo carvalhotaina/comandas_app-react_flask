@@ -1,26 +1,28 @@
 import React from "react";
-import { Box, Typography, Paper } from "@mui/material";
+import pastelImg from './images/img.png';
+import { Box, Typography, Button } from "@mui/material";
+import './Home.css';
 
 const Home = () => {
-  return (
-    <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-      <Paper elevation={3} sx={{ p: 4, width: 600 }}>
-        <Typography variant="h5" gutterBottom>Home</Typography>
+    return (
+        <Box className="home-container">
+            <Box className="card">
+                <Typography variant="h3" className="title" gutterBottom>
+                    Bem-vindo à Pastelaria Delícia!
+                </Typography>
+                <Typography variant="h6" className="subtitle" gutterBottom>
+                    O melhor pastel da cidade você encontra aqui.
+                </Typography>
+                <img
+                    src={pastelImg}
+                    alt="Pastel crocante"
+                    className="pastel-img"
+                    style={{ width: "250px", height: "auto" }}
+                />
 
-        <Typography variant="body1" sx={{ mb: 1 }}>
-          Bem-vindo ao aplicativo Comandas!
-        </Typography>
-
-        <Typography variant="body2" sx={{ mb: 1 }}>
-          Explore as funcionalidades e aproveite sua experiência.
-        </Typography>
-
-        <Typography variant="body2" color="text.secondary">
-          {`Data atual: ${new Date().toLocaleDateString()}`}
-        </Typography>
-      </Paper>
-    </Box>
-  );
+            </Box>
+        </Box>
+    );
 };
 
 export default Home;
