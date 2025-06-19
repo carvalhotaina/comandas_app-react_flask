@@ -9,6 +9,7 @@ import { getFuncionarios, deleteFuncionario } from '../services/funcionarioServi
 import { toast } from 'react-toastify';
 import { useTheme } from '@mui/material/styles';
 import './FuncionarioList.css';
+import html2pdf from 'html2pdf.js';
 
 function FuncionarioList() {
     const navigate = useNavigate();
@@ -65,62 +66,86 @@ function FuncionarioList() {
         } catch (error) {
             console.error('Erro ao deletar funcionário:', error);
             toast.error('Erro ao excluir funcionário.', { position: "top-center" });
+
         }
     };
+    const handleExportPDF = () => {
+        const element = document.getElementById('pdf-content');
+        const opt = {
+            margin: 0.5,
+            filename: 'relatorio_funcionario.pdf',
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save();
+    };
+
 
     return (
+
         <div className="table-container">
             <div className="card">
-                <Toolbar className="toolbar">
-                    <Typography variant="h6" className="title">Funcionários</Typography>
-                    <Button className="new-button" onClick={() => navigate('/funcionario')} startIcon={<FiberNew />}>
-                        Novo
-                    </Button>
-                </Toolbar>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell className="table-header-cell">ID</TableCell>
-                            <TableCell className="table-header-cell">Nome</TableCell>
-                            <TableCell className="table-header-cell">CPF</TableCell>
-                            {!isSmallScreen && <TableCell className="table-header-cell">Matrícula</TableCell>}
-                            <TableCell className="table-header-cell">Ações</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {funcionarios.map((funcionario) => (
-                            <TableRow key={funcionario.id_funcionario}>
-                                <TableCell className="table-cell">{funcionario.id_funcionario}</TableCell>
-                                <TableCell className="table-cell">{funcionario.nome}</TableCell>
-                                <TableCell className="table-cell">{funcionario.cpf}</TableCell>
-                                {!isSmallScreen && (
-                                    <TableCell className="table-cell">{funcionario.matricula}</TableCell>
-                                )}
-                                <TableCell>
-                                    <IconButton className="actions-button"
-                                        onClick={() => navigate(`/funcionario/view/${funcionario.id_funcionario}`)}
-                                    >
-                                        <Visibility color="primary" />
-                                    </IconButton>
-                                    <IconButton className="actions-button"
-                                        onClick={() => navigate(`/funcionario/edit/${funcionario.id_funcionario}`)}
-                                    >
-                                        <Edit color="secondary" />
-                                    </IconButton>
-                                    <IconButton className="actions-button"
-                                        onClick={() => handleDeleteClick(funcionario)}
-                                    >
-                                        <Delete color="error" />
-                                    </IconButton>
-                                </TableCell>
+                <div id="pdf-content">
+                    <Toolbar className="toolbar">
+                        <Typography variant="h6" className="title">Funcionários</Typography>
+                        <Button className="new-button" onClick={() => navigate('/funcionario')} startIcon={<FiberNew />}>
+                            Novo
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            color="secondary"
+                            onClick={handleExportPDF}
+                            style={{ marginLeft: 'auto' }}
+                        >
+                            Exportar PDF
+                        </Button>
+
+                    </Toolbar>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell className="table-header-cell">ID</TableCell>
+                                <TableCell className="table-header-cell">Nome</TableCell>
+                                <TableCell className="table-header-cell">CPF</TableCell>
+                                {!isSmallScreen && <TableCell className="table-header-cell">Matrícula</TableCell>}
+                                <TableCell className="table-header-cell">Ações</TableCell>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHead>
+                        <TableBody>
+                            {funcionarios.map((funcionario) => (
+                                <TableRow key={funcionario.id_funcionario}>
+                                    <TableCell className="table-cell">{funcionario.id_funcionario}</TableCell>
+                                    <TableCell className="table-cell">{funcionario.nome}</TableCell>
+                                    <TableCell className="table-cell">{funcionario.cpf}</TableCell>
+                                    {!isSmallScreen && (
+                                        <TableCell className="table-cell">{funcionario.matricula}</TableCell>
+                                    )}
+                                    <TableCell>
+                                        <IconButton className="actions-button"
+                                            onClick={() => navigate(`/funcionario/view/${funcionario.id_funcionario}`)}
+                                        >
+                                            <Visibility color="primary" />
+                                        </IconButton>
+                                        <IconButton className="actions-button"
+                                            onClick={() => navigate(`/funcionario/edit/${funcionario.id_funcionario}`)}
+                                        >
+                                            <Edit color="secondary" />
+                                        </IconButton>
+                                        <IconButton className="actions-button"
+                                            onClick={() => handleDeleteClick(funcionario)}
+                                        >
+                                            <Delete color="error" />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
         </div>
     );
 }
 
 export default FuncionarioList;
- 

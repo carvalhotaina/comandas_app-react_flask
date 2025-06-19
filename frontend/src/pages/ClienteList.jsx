@@ -9,6 +9,8 @@ import { getClientes, deleteCliente } from '../services/clienteService';
 import { toast } from 'react-toastify';
 import { useTheme } from '@mui/material/styles';
 import './ClienteList.css';
+import html2pdf from 'html2pdf.js';
+
 
 function ClienteList() {
     const navigate = useNavigate();
@@ -68,54 +70,78 @@ function ClienteList() {
         }
     };
 
-    return (
-        <div className="table-container">
-            <div className="card">
-                <Toolbar className="toolbar">
-                    <Typography variant="h6" className="title">Clientes</Typography>
-                    <Button className="new-button" onClick={() => navigate('/cliente')} startIcon={<FiberNew />}>
-                        Novo
-                    </Button>
-                </Toolbar>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell className="table-header-cell">ID</TableCell>
-                            <TableCell className="table-header-cell">Nome</TableCell>
-                            <TableCell className="table-header-cell">CPF</TableCell>
-                            <TableCell className="table-header-cell">Ações</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {clientes.map((cliente) => (
-                            <TableRow key={cliente.id_cliente}>
-                                <TableCell className="table-cell">{cliente.id_cliente}</TableCell>
-                                <TableCell className="table-cell">{cliente.nome}</TableCell>
-                                <TableCell className="table-cell">{cliente.cpf}</TableCell>
-                                <TableCell>
-                                    <IconButton className="actions-button"
-                                        onClick={() => navigate(`/cliente/view/${cliente.id_cliente}`)}
-                                    >
-                                        <Visibility color="primary" />
-                                    </IconButton>
-                                    <IconButton className="actions-button"
-                                        onClick={() => navigate(`/cliente/edit/${cliente.id_cliente}`)}
-                                    >
-                                        <Edit color="secondary" />
-                                    </IconButton>
-                                    <IconButton className="actions-button"
-                                        onClick={() => handleDeleteClick(cliente)}
-                                    >
-                                        <Delete color="error" />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        </div>
-    );
-}
+    const handleExportPDF = () => {
+        const element = document.getElementById('pdf-content');
+        const opt = {
+            margin: 0.5,
+            filename: 'relatorio_clientes.pdf',
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
 
-export default ClienteList;
+        html2pdf().set(opt).from(element).save();
+    };
+
+
+        return (
+            <div className="table-container">
+                <div className="card">
+                    <div id="pdf-content">
+                        <Toolbar className="toolbar">
+                            <Typography variant="h6" className="title">Clientes</Typography>
+                            <Button className="new-button" onClick={() => navigate('/cliente')} startIcon={<FiberNew />}>
+                                Novo
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                color="secondary"
+                                onClick={handleExportPDF}
+                                style={{ marginLeft: 'auto' }}
+                            >
+                                Exportar PDF
+                            </Button>
+
+                        </Toolbar>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell className="table-header-cell">ID</TableCell>
+                                    <TableCell className="table-header-cell">Nome</TableCell>
+                                    <TableCell className="table-header-cell">CPF</TableCell>
+                                    <TableCell className="table-header-cell">Ações</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {clientes.map((cliente) => (
+                                    <TableRow key={cliente.id_cliente}>
+                                        <TableCell className="table-cell">{cliente.id_cliente}</TableCell>
+                                        <TableCell className="table-cell">{cliente.nome}</TableCell>
+                                        <TableCell className="table-cell">{cliente.cpf}</TableCell>
+                                        <TableCell>
+                                            <IconButton className="actions-button"
+                                                onClick={() => navigate(`/cliente/view/${cliente.id_cliente}`)}
+                                            >
+                                                <Visibility color="primary" />
+                                            </IconButton>
+                                            <IconButton className="actions-button"
+                                                onClick={() => navigate(`/cliente/edit/${cliente.id_cliente}`)}
+                                            >
+                                                <Edit color="secondary" />
+                                            </IconButton>
+                                            <IconButton className="actions-button"
+                                                onClick={() => handleDeleteClick(cliente)}
+                                            >
+                                                <Delete color="error" />
+                                            </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    export default ClienteList;
